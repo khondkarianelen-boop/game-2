@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ИИ среди нас</title>
+<style>
+/* ── Variables ────────────────────────────────── */
+:root {
+  --bg:      #07070f; --bg-c:  #0e0e1c; --bdr: #1e1e38; --bdr2: #2e2e58;
+  --neon:    #7c3aed; --nhi:   #a855f7; --nglow: rgba(124,58,237,.35);
+  --cyan:    #22d3ee; --cglow: rgba(34,211,238,.3);
+  --txt:     #e2e8f0; --dim:   #94a3b8; --mut:  #475569;
+  --ok:      #10b981; --warn:  #f59e0b; --bad:  #ef4444;
+  --r: 12px; --rs: 8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden}
+input,textarea,button{font-family:inherit}
+textarea{resize:vertical}
+
+/* ── Screens ──────────────────────────────────── */
+.screen{display:none;min-height:100vh;padding:20px;max-width:960px;margin:0 auto}
+.screen.active{display:block}
+.flex-screen{display:none;min-height:100vh;align-items:center;justify-content:center}
+.flex-screen.active{display:flex}
+
+/* ── Welcome ──────────────────────────────────── */
+.hero{text-align:center;padding:52px 0 36px}
+.hero-icon{font-size:68px;color:var(--nhi);text-shadow:0 0 40px var(--nglow);display:block;margin-bottom:10px;animation:pulse 3s ease-in-out infinite}
+.hero h1{font-size:clamp(1.9rem,5vw,2.8rem);font-weight:800;background:linear-gradient(135deg,var(--nhi),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px}
+.tagline{color:var(--dim);font-size:.9rem;letter-spacing:.04em}
+.card{background:var(--bg-c);border:1px solid var(--bdr);border-radius:var(--r);padding:26px;max-width:400px;margin:0 auto}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:.75rem;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
+input[type=text],textarea{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:var(--rs);padding:10px 13px;color:var(--txt);font-size:.95rem;outline:none;transition:border-color .2s,box-shadow .2s}
+input[type=text]:focus,textarea:focus{border-color:var(--neon);box-shadow:0 0 0 3px var(--nglow)}
+textarea{min-height:100px}
+.sep{text-align:center;color:var(--mut);font-size:.8rem;margin:14px 0;position:relative}
+.sep::before,.sep::after{content:'';position:absolute;top:50%;width:calc(50% - 50px);height:1px;background:var(--bdr)}
+.sep::before{left:0}.sep::after{right:0}
+.row-join{display:flex;gap:8px}
+.row-join input{flex:1;text-transform:uppercase;letter-spacing:.15em;font-weight:700}
+.err-box{margin-top:10px;padding:9px 13px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:var(--rs);color:var(--bad);font-size:.83rem}
+
+/* ── Buttons ──────────────────────────────────── */
+.btn{padding:11px 22px;border:none;border-radius:var(--rs);font-size:.92rem;font-weight:600;cursor:pointer;transition:transform .15s,box-shadow .15s,opacity .15s;line-height:1}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important}
+.btn-p{background:linear-gradient(135deg,var(--neon),var(--nhi));color:#fff;box-shadow:0 0 20px var(--nglow)}
+.btn-p:hover:not(:disabled){box-shadow:0 0 32px var(--nglow);transform:translateY(-1px)}
+.btn-s{background:rgba(255,255,255,.07);color:var(--txt);border:1px solid var(--bdr)}
+.btn-s:hover:not(:disabled){background:rgba(255,255,255,.12)}
+.btn-full{width:100%;margin-bottom:4px}
+.btn-lg{width:100%;padding:14px;font-size:1.05rem}
+.btn-sm{padding:7px 13px;font-size:.86rem}
+.btn-icon{background:none;border:none;color:var(--dim);cursor:pointer;font-size:1.1rem;padding:3px 6px;transition:color .2s}
+.btn-icon:hover{color:var(--cyan)}
+
+/* ── Top bar ──────────────────────────────────── */
+.top-bar{display:flex;justify-content:space-between;align-items:center;padding:16px 0 18px;border-bottom:1px solid var(--bdr);margin-bottom:22px;flex-wrap:wrap;gap:10px}
+.code-badge{display:flex;align-items:center;gap:8px}
+.code-lbl{font-size:.75rem;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
+.code-val{font-size:1.9rem;font-weight:800;letter-spacing:.18em;font-family:monospace;color:var(--cyan);text-shadow:0 0 22px var(--cglow)}
+.game-bar{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--bdr);margin-bottom:18px}
+.round-pill{background:var(--bg-c);border:1px solid var(--bdr);border-radius:20px;padding:4px 13px;font-size:.8rem;color:var(--dim)}
+.timer{font-size:1.9rem;font-weight:700;font-family:monospace;color:var(--cyan);text-shadow:0 0 18px var(--cglow);min-width:50px;text-align:center;transition:color .3s}
+.timer.warn{color:var(--warn);text-shadow:0 0 18px rgba(245,158,11,.4)}
+.timer.crit{color:var(--bad);text-shadow:0 0 18px rgba(239,68,68,.4);animation:pulse .5s infinite}
+.rbadge{font-size:.73rem;padding:4px 11px;border-radius:20px;font-weight:600}
+.rbadge.ai{background:rgba(124,58,237,.15);border:1px solid var(--neon);color:var(--nhi)}
+.rbadge.human{background:rgba(34,211,238,.1);border:1px solid var(--cyan);color:var(--cyan)}
+
+/* ── Players grid ─────────────────────────────── */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:11px;margin-bottom:24px}
+.pc{background:var(--bg-c);border:1px solid var(--bdr);border-radius:var(--rs);padding:15px 11px;text-align:center;transition:border-color .2s}
+.pc.is-host{border-color:var(--neon);box-shadow:0 0 13px var(--nglow)}
+.pc.dead{opacity:.3}
+.av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.15rem;font-weight:700;color:#fff;margin:0 auto 7px}
+.pname{font-size:.86rem;font-weight:600}
+.ptag{font-size:.68rem;color:var(--nhi);margin-top:2px}
+
+/* ── Lobby footer ─────────────────────────────── */
+.lfoot{text-align:center;padding:6px 0 18px}
+.hint{font-size:.76rem;color:var(--mut);margin-top:7px}
+.dim-txt{color:var(--dim)}
+.pulse{animation:blink 1.6s ease-in-out infinite}
+
+/* ── Loading overlay ──────────────────────────── */
+#loading{position:fixed;inset:0;background:rgba(7,7,15,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9998;gap:16px}
+#loading.hidden{display:none}
+.spinner{width:40px;height:40px;border:3px solid var(--bdr2);border-top-color:var(--nhi);border-radius:50%;animation:spin 1s linear infinite}
+.loading-txt{color:var(--dim);font-size:.95rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Role reveal ──────────────────────────────── */
+.role-card{background:var(--bg-c);border:2px solid var(--bdr);border-radius:20px;padding:44px 38px;max-width:330px;text-align:center;animation:popIn .5s cubic-bezier(.175,.885,.32,1.275)}
+.role-card.is-ai{border-color:var(--neon);box-shadow:0 0 46px var(--nglow)}
+.role-card.is-human{border-color:var(--cyan);box-shadow:0 0 46px var(--cglow)}
+.rpre{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin-bottom:18px}
+.remoji{font-size:64px;margin-bottom:12px;line-height:1}
+.rtitle{font-size:1.55rem;font-weight:800;margin-bottom:10px}
+.rtitle.is-ai{color:var(--nhi)}.rtitle.is-human{color:var(--cyan)}
+.rdesc{color:var(--dim);font-size:.86rem;line-height:1.65;margin-bottom:18px}
+.rcount{font-size:.75rem;color:var(--mut)}
+
+/* ── Question card ────────────────────────────── */
+.qcard{background:var(--bg-c);border:1px solid var(--bdr);border-left:3px solid var(--nhi);border-radius:var(--r);padding:20px 22px;margin-bottom:18px}
+.qcard.sm{padding:12px 16px;margin-bottom:16px}
+.qlbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin-bottom:7px}
+.qtxt{font-size:1.18rem;line-height:1.55}
+.qcard.sm .qtxt{font-size:.93rem}
+
+/* ── Answer form ──────────────────────────────── */
+.afoot{display:flex;justify-content:space-between;align-items:center;margin-top:7px}
+.char{font-size:.76rem;color:var(--mut)}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.chip{padding:3px 11px;border-radius:20px;font-size:.8rem}
+.chip-ok{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:var(--ok)}
+.chip-dim{background:rgba(255,255,255,.04);border:1px solid var(--bdr);color:var(--mut)}
+
+/* ── Discussing ───────────────────────────────── */
+.dis-lay{display:grid;grid-template-columns:1fr 1fr;gap:14px;height:calc(100vh - 105px)}
+@media(max-width:620px){.dis-lay{grid-template-columns:1fr;height:auto}}
+.panel{background:var(--bg-c);border:1px solid var(--bdr);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;overflow:hidden}
+.ptitle{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--mut);margin-bottom:10px}
+.ascroll{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:9px}
+.ai{background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:var(--rs);padding:11px 13px;animation:slideUp .25s ease-out}
+.ai .ain{font-size:.73rem;font-weight:700;color:var(--nhi);margin-bottom:4px}
+.ai .ait{font-size:.87rem;line-height:1.5}
+.chat-log{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;margin-bottom:9px}
+.msg{animation:slideUp .2s ease-out}
+.mmeta{font-size:.7rem;color:var(--mut);margin-bottom:2px}
+.mbody{display:inline-block;background:rgba(255,255,255,.05);border-radius:0 7px 7px 7px;padding:6px 10px;font-size:.87rem;line-height:1.4;max-width:92%}
+.msg.own .mmeta{text-align:right}
+.msg.own .mbody{background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.3);border-radius:7px 0 7px 7px;margin-left:auto}
+.chat-form{display:flex;gap:6px;margin-top:auto}
+.chat-form input{flex:1}
+
+/* ── Voting ───────────────────────────────────── */
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:11px;margin-bottom:14px}
+.vc{background:var(--bg-c);border:1px solid var(--bdr);border-radius:var(--rs);padding:16px 12px;text-align:center;cursor:pointer;transition:border-color .2s,box-shadow .2s,background .2s}
+.vc:hover{border-color:var(--neon);box-shadow:0 0 14px var(--nglow)}
+.vc.sel{border-color:var(--neon);background:rgba(124,58,237,.1);cursor:default}
+.vc.dis{cursor:default}
+.vname{font-weight:600;margin:7px 0 9px}
+.vbar{height:4px;background:var(--bdr);border-radius:2px;overflow:hidden}
+.vfill{height:100%;background:linear-gradient(90deg,var(--neon),var(--nhi));border-radius:2px;transition:width .5s ease}
+.vcnt{font-size:.7rem;color:var(--mut);margin-top:4px}
+
+/* ── Info msg ─────────────────────────────────── */
+.info-msg{padding:11px 15px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:var(--rs);color:var(--ok);font-size:.87rem;text-align:center;margin-top:4px}
+.plbl{font-size:.73rem;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-bottom:9px}
+
+/* ── Round results ────────────────────────────── */
+.rw{max-width:560px;margin:32px auto}
+.rheading{font-size:1.35rem;font-weight:700;text-align:center;margin-bottom:24px}
+.elimcard{background:var(--bg-c);border:2px solid var(--bdr);border-radius:var(--r);padding:26px;text-align:center;margin-bottom:22px;animation:popIn .4s ease-out}
+.elimlbl{font-size:.73rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin-bottom:9px}
+.elimname{font-size:1.75rem;font-weight:800;margin-bottom:12px}
+.elimtag{display:inline-block;padding:6px 18px;border-radius:28px;font-size:.93rem;font-weight:600}
+.elimtag.ai{background:rgba(124,58,237,.15);border:1px solid var(--neon);color:var(--nhi)}
+.elimtag.human{background:rgba(34,211,238,.1);border:1px solid var(--cyan);color:var(--cyan)}
+.elimtag.none{background:rgba(255,255,255,.05);border:1px solid var(--bdr);color:var(--dim)}
+.bklist{display:flex;flex-direction:column;gap:7px;margin:9px 0 22px}
+.bkitem{display:flex;align-items:center;gap:11px;padding:9px 13px;background:var(--bg-c);border:1px solid var(--bdr);border-radius:var(--rs)}
+.bkitem.top{border-color:var(--bad)}
+.bkname{flex:1;font-size:.87rem}
+.bkcnt{font-size:.8rem;color:var(--dim)}
+
+/* ── Game Over ────────────────────────────────── */
+.gow{max-width:560px;margin:32px auto;text-align:center}
+.goa{margin-bottom:32px;animation:popIn .6s cubic-bezier(.175,.885,.32,1.275)}
+.goi{font-size:76px;margin-bottom:14px}
+.got{font-size:2.1rem;font-weight:800;margin-bottom:7px}
+.gos{color:var(--dim);font-size:.98rem}
+.goa.wh .got{color:var(--cyan);text-shadow:0 0 30px var(--cglow)}
+.goa.wa .got{color:var(--nhi);text-shadow:0 0 30px var(--nglow)}
+.fg{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:9px;margin:10px 0 26px;text-align:left}
+.fc{background:var(--bg-c);border:1px solid var(--bdr);border-radius:var(--rs);padding:11px 13px}
+.fcn{font-weight:600;font-size:.88rem;margin-bottom:3px}
+.fcr{font-size:.76rem}
+.fcr.ai{color:var(--nhi)}.fcr.human{color:var(--cyan)}
+.fcd{font-size:.7rem;color:var(--mut);margin-top:2px}
+
+/* ── Toast ────────────────────────────────────── */
+#toast{position:fixed;bottom:22px;right:22px;background:var(--bg-c);border:1px solid var(--bdr2);border-radius:var(--rs);padding:11px 16px;font-size:.87rem;box-shadow:0 8px 32px rgba(0,0,0,.4);animation:slideUp .25s ease-out;max-width:270px;z-index:9999}
+#toast.hidden{display:none}
+
+/* ── Scrollbar ────────────────────────────────── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
+
+/* ── Animations ───────────────────────────────── */
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.65;transform:scale(.93)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes popIn{from{opacity:0;transform:scale(.82) translateY(14px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes glitch1{0%,100%{clip-path:inset(0 0 95% 0);transform:translate(-3px,0)}25%{clip-path:inset(30% 0 50% 0);transform:translate(3px,0)}50%{clip-path:inset(60% 0 20% 0);transform:translate(-2px,0)}75%{clip-path:inset(80% 0 5% 0);transform:translate(2px,0)}}
+@keyframes glitch2{0%,100%{clip-path:inset(50% 0 30% 0);transform:translate(3px,0)}33%{clip-path:inset(10% 0 70% 0);transform:translate(-3px,0)}66%{clip-path:inset(75% 0 10% 0);transform:translate(2px,0)}}
+@keyframes scanline{0%{top:-20%}100%{top:120%}}
+@keyframes timerRing{from{stroke-dashoffset:var(--dash-start)}to{stroke-dashoffset:var(--dash-end)}}
+@keyframes float{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-14px) rotate(8deg)}}
+@keyframes orbita{from{transform:rotate(0deg) translateX(60px) rotate(0deg)}to{transform:rotate(360deg) translateX(60px) rotate(-360deg)}}
+
+/* ── Background canvas ────────────────────────── */
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.55}
+
+/* ── Scanline overlay ─────────────────────────── */
+body::after{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.07) 2px,rgba(0,0,0,.07) 4px)}
+
+/* ── All content above canvas ─────────────────── */
+#app{position:relative;z-index:2}
+#loading{z-index:9999}
+#toast{z-index:9998}
+
+/* ── Screen transitions ───────────────────────── */
+.screen.active,.flex-screen.active{animation:fadeIn .35s ease-out}
+
+/* ── Hero glitch ──────────────────────────────── */
+.hero-icon{position:relative;display:inline-block}
+.hero-icon::before,.hero-icon::after{content:attr(data-txt);position:absolute;inset:0;color:var(--nhi)}
+.hero-icon::before{color:#0ff;animation:glitch1 4s infinite steps(1);opacity:.7}
+.hero-icon::after{color:#f0f;animation:glitch2 4s infinite steps(1) .2s;opacity:.7}
+
+/* ── Floating hex decorations ─────────────────── */
+.hex-deco{position:fixed;pointer-events:none;z-index:1;font-size:1.4rem;opacity:.08;animation:float 6s ease-in-out infinite}
+
+/* ── Timer ring ───────────────────────────────── */
+.timer-wrap{position:relative;display:flex;align-items:center;justify-content:center;width:72px;height:72px}
+.timer-svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.timer-ring{fill:none;stroke:var(--bdr2);stroke-width:3}
+.timer-arc{fill:none;stroke-width:3;stroke-linecap:round;transition:stroke .4s}
+.timer{position:relative;z-index:1;font-size:1.55rem;min-width:unset}
+
+/* ── Role card orb ────────────────────────────── */
+.role-orb{position:relative;width:80px;height:80px;margin:0 auto 16px}
+.role-orb-inner{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.4rem}
+.role-orb.is-ai .role-orb-inner{background:radial-gradient(circle,rgba(124,58,237,.4),rgba(124,58,237,.05));box-shadow:0 0 40px var(--nglow),inset 0 0 20px var(--nglow);animation:pulse 2s ease-in-out infinite}
+.role-orb.is-human .role-orb-inner{background:radial-gradient(circle,rgba(34,211,238,.3),rgba(34,211,238,.05));box-shadow:0 0 40px var(--cglow),inset 0 0 20px var(--cglow);animation:pulse 2.5s ease-in-out infinite}
+
+/* ── Vote card glow on hover ──────────────────── */
+.vc{overflow:hidden}
+.vc::before{content:'';position:absolute;inset:-1px;border-radius:inherit;background:linear-gradient(135deg,var(--neon),var(--cyan));opacity:0;transition:opacity .25s;z-index:-1}
+.vc:hover::before{opacity:.5}
+.vc{position:relative}
+
+/* ── Player card pulse when answered/voted ────── */
+.chip-ok{animation:none}
+.chip-ok{box-shadow:0 0 8px rgba(16,185,129,.4)}
+
+/* ── Game-bar neon line ────────────────────────── */
+.game-bar{border-image:linear-gradient(90deg,transparent,var(--neon),var(--cyan),transparent) 1;border-bottom-style:solid}
+
+/* ── Neon button shine ────────────────────────── */
+.btn-p::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.15) 50%,transparent 60%);transform:translateX(-100%);transition:transform .4s}
+.btn-p:hover::after{transform:translateX(100%)}
+.btn-p{position:relative;overflow:hidden}
+
+/* ── Answer item accent ───────────────────────── */
+.ai{border-left:2px solid rgba(168,85,247,.35);transition:border-color .2s}
+.ai:hover{border-left-color:var(--nhi)}
+
+/* ── Eliminated card dramatic glow ────────────── */
+.elimcard{transition:border-color .5s,box-shadow .5s}
+
+/* ── Winner icon bounce ───────────────────────── */
+.goi{display:inline-block;animation:float 2.5s ease-in-out infinite}
+</style>
+</head>
+<body>
+
+<!-- Animated background -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- Floating hex decorations -->
+<div class="hex-deco" style="top:8%;left:5%;animation-delay:0s;font-size:2rem">⬡</div>
+<div class="hex-deco" style="top:20%;right:7%;animation-delay:1.5s;font-size:1.1rem">⬡</div>
+<div class="hex-deco" style="top:60%;left:3%;animation-delay:3s;font-size:1.8rem">⬡</div>
+<div class="hex-deco" style="top:75%;right:4%;animation-delay:.8s;font-size:1.3rem">⬡</div>
+<div class="hex-deco" style="top:45%;left:92%;animation-delay:2s;font-size:1rem">⬡</div>
+
+<!-- Loading overlay -->
+<div id="loading" class="hidden">
+  <div class="spinner"></div>
+  <div class="loading-txt" id="loading-txt">Подключение…</div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="hidden"></div>
+
+<div id="app">
+
+<!-- ═══ WELCOME ═════════════════════════════════ -->
+<div id="s-welcome" class="screen active">
+  <div class="hero">
+    <span class="hero-icon" data-txt="⬡">⬡</span>
+    <h1>ИИ среди нас</h1>
+    <p class="tagline">Кто среди вас — машина?</p>
+  </div>
+  <div class="card">
+    <div class="field">
+      <label for="inp-name">Твоё имя</label>
+      <input id="inp-name" type="text" placeholder="Никнейм (до 20 символов)" maxlength="20" autocomplete="off">
+    </div>
+    <button class="btn btn-p btn-full" id="btn-create">Создать комнату</button>
+    <div class="sep">или войди по коду</div>
+    <div class="row-join">
+      <input id="inp-code" type="text" placeholder="XXXX" maxlength="4" autocomplete="off">
+      <button class="btn btn-s" id="btn-join">Войти</button>
+    </div>
+    <div id="err-box" class="err-box hidden"></div>
+  </div>
+</div>
+
+<!-- ═══ LOBBY ════════════════════════════════════ -->
+<div id="s-lobby" class="screen">
+  <div class="top-bar">
+    <div class="code-badge">
+      <span class="code-lbl">Код комнаты</span>
+      <span id="lob-code" class="code-val">----</span>
+      <button class="btn-icon" id="btn-copy" title="Скопировать">⧉</button>
+    </div>
+    <span class="dim-txt" style="font-size:.85rem">Для других устройств: открыть тот же файл → ввести код</span>
+  </div>
+  <div id="lob-players" class="pgrid"></div>
+  <div class="lfoot">
+    <div id="lob-host-ctrl" class="hidden">
+      <button class="btn btn-p btn-lg" id="btn-start">▶ Начать игру</button>
+      <p class="hint" id="lob-hint">Нужно минимум 4 игрока</p>
+    </div>
+    <p id="lob-wait" class="pulse dim-txt">Ожидаем хоста…</p>
+  </div>
+</div>
+
+<!-- ═══ ROLE REVEAL ══════════════════════════════ -->
+<div id="s-role" class="flex-screen">
+  <div id="role-card" class="role-card">
+    <div class="rpre">Твоя роль в этой игре:</div>
+    <div id="role-orb" class="role-orb">
+      <div class="role-orb-inner"><span id="role-emoji"></span></div>
+    </div>
+    <div id="role-title" class="rtitle"></div>
+    <div id="role-desc" class="rdesc"></div>
+    <div class="rcount">Игра начнётся через <span id="role-cd">5</span> с…</div>
+  </div>
+</div>
+
+<!-- ═══ ANSWERING ════════════════════════════════ -->
+<div id="s-answering" class="screen">
+  <div class="game-bar">
+    <span class="round-pill">Раунд <span id="a-rnd">1</span> / <span id="a-max">5</span></span>
+    <div class="timer-wrap">
+      <svg class="timer-svg" viewBox="0 0 72 72"><circle class="timer-ring" cx="36" cy="36" r="30"/><circle id="a-arc" class="timer-arc" cx="36" cy="36" r="30" stroke="var(--cyan)" stroke-dasharray="188" stroke-dashoffset="0"/></svg>
+      <span id="a-timer" class="timer">30</span>
+    </div>
+    <span id="a-badge" class="rbadge"></span>
+  </div>
+  <div class="qcard">
+    <div class="qlbl">Вопрос раунда</div>
+    <div id="a-q" class="qtxt"></div>
+  </div>
+  <div id="a-form">
+    <textarea id="a-inp" placeholder="Напиши свой ответ… (Ctrl+Enter для отправки)" maxlength="500" rows="4"></textarea>
+    <div class="afoot">
+      <span class="char"><span id="a-chars">0</span>/500</span>
+      <button class="btn btn-p" id="btn-ans">Отправить</button>
+    </div>
+  </div>
+  <div id="a-sent" class="info-msg hidden">✓ Ответ отправлен — ждём остальных</div>
+  <div style="margin-top:18px">
+    <div class="plbl">Ответили:</div>
+    <div id="a-who" class="chips"></div>
+  </div>
+</div>
+
+<!-- ═══ DISCUSSING ═══════════════════════════════ -->
+<div id="s-discussing" class="screen">
+  <div class="game-bar">
+    <span class="round-pill">Раунд <span id="d-rnd">1</span></span>
+    <div class="timer-wrap">
+      <svg class="timer-svg" viewBox="0 0 72 72"><circle class="timer-ring" cx="36" cy="36" r="30"/><circle id="d-arc" class="timer-arc" cx="36" cy="36" r="30" stroke="var(--cyan)" stroke-dasharray="188" stroke-dashoffset="0"/></svg>
+      <span id="d-timer" class="timer">120</span>
+    </div>
+    <span id="d-badge" class="rbadge"></span>
+  </div>
+  <div class="dis-lay">
+    <div class="panel">
+      <div class="ptitle">Ответы игроков</div>
+      <div id="d-answers" class="ascroll"></div>
+    </div>
+    <div class="panel">
+      <div class="ptitle">Обсуждение</div>
+      <div id="chat-log" class="chat-log"></div>
+      <div class="chat-form">
+        <input id="chat-inp" type="text" placeholder="Напиши в чат…" maxlength="300" autocomplete="off">
+        <button class="btn btn-s btn-sm" id="btn-chat">↑</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ VOTING ═══════════════════════════════════ -->
+<div id="s-voting" class="screen">
+  <div class="game-bar">
+    <span class="round-pill">Раунд <span id="v-rnd">1</span></span>
+    <div class="timer-wrap">
+      <svg class="timer-svg" viewBox="0 0 72 72"><circle class="timer-ring" cx="36" cy="36" r="30"/><circle id="v-arc" class="timer-arc" cx="36" cy="36" r="30" stroke="var(--cyan)" stroke-dasharray="188" stroke-dashoffset="0"/></svg>
+      <span id="v-timer" class="timer">50</span>
+    </div>
+    <span id="v-badge" class="rbadge"></span>
+  </div>
+  <div class="qcard sm">
+    <div class="qlbl">Голосуй — кто из них ИИ?</div>
+    <div id="v-q" class="qtxt"></div>
+  </div>
+  <div id="v-players" class="vgrid"></div>
+  <div id="v-sent" class="info-msg hidden">✓ Голос подан — ждём остальных</div>
+</div>
+
+<!-- ═══ ROUND RESULTS ════════════════════════════ -->
+<div id="s-round-results" class="screen">
+  <div class="rw">
+    <h2 id="r-heading" class="rheading">Результаты голосования</h2>
+    <div id="r-elimcard" class="elimcard">
+      <div class="elimlbl">Исключён</div>
+      <div id="r-name" class="elimname"></div>
+      <div id="r-role" class="elimtag"></div>
+    </div>
+    <div class="plbl">Распределение голосов:</div>
+    <div id="r-breakdown" class="bklist"></div>
+    <div id="r-host-ctrl" class="hidden">
+      <button class="btn btn-p btn-lg" id="btn-next">Следующий раунд →</button>
+    </div>
+    <p id="r-wait" class="hidden pulse dim-txt" style="text-align:center">Ждём хоста…</p>
+  </div>
+</div>
+
+<!-- ═══ GAME OVER ════════════════════════════════ -->
+<div id="s-game-over" class="screen">
+  <div class="gow">
+    <div id="go-ann" class="goa">
+      <div id="go-icon" class="goi"></div>
+      <div id="go-title" class="got"></div>
+      <div id="go-sub" class="gos"></div>
+    </div>
+    <div style="text-align:left">
+      <div class="plbl">Роли всех игроков:</div>
+      <div id="go-players" class="fg"></div>
+    </div>
+    <div id="go-host-ctrl" class="hidden">
+      <button class="btn btn-p btn-lg" id="btn-restart">↺ Играть снова</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- #app -->
+
+<!-- PeerJS: WebRTC peer-to-peer (бесплатный CDN, аккаунт не нужен) -->
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+'use strict';
+
+// ── Questions ────────────────────────────────────────────────────────────────
+const QUESTIONS = [
+  'Что значит быть живым?',
+  'Если машина способна думать — означает ли это, что она чувствует?',
+  'Можно ли по-настоящему понять чужую боль?',
+  'Что важнее — справедливость или милосердие?',
+  'Существует ли свободная воля или всё предопределено?',
+  'Что делает человека человеком?',
+  'Стоит ли лгать ради общего блага?',
+  'Если бы ты мог стереть все воспоминания и начать заново — сделал бы это?',
+  'Что страшнее — одиночество или потеря себя?',
+  'Можно ли доверять тому, кто никогда не ошибается?',
+  'Что важнее — счастье или истина?',
+  'Если все забудут о твоём поступке — имел ли он значение?',
+  'Можно ли называть себя добрым, если ты добр только когда удобно?',
+  'Что ценнее — опыт или знание?',
+  'Можно ли простить, не забыв?',
+  'Если твои ценности сформированы обществом — можно ли считать их своими?',
+  'Что делает поступок моральным — намерение или результат?',
+  'Есть ли разница между тем, кто не может причинить вред, и тем, кто не хочет?',
+  'Можно ли быть счастливым в мире, где другие страдают?',
+  'Если ты изменился до неузнаваемости — ты всё ещё ты?',
+];
+
+// ── Config ───────────────────────────────────────────────────────────────────
+const MAX_ROUNDS = 5;
+const TIMERS = { ANSWERING: 30, DISCUSSING: 40, VOTING: 50 };
+const ROLE_REVEAL_SECS = 5;
+
+// ── Peer / session state ─────────────────────────────────────────────────────
+let myPeerId = null, myName = null, myRole = null, roomCode = null, amHost = false;
+
+// Host side
+let hostPeer = null;
+let hostConns = {};   // peerId → DataConnection
+
+// Client side
+let clientPeer = null;
+let hostConn = null;  // DataConnection to host
+
+// ── UI state ─────────────────────────────────────────────────────────────────
+let uiState = null;
+let hasAnswered = false, hasVoted = false;
+let shuffledAnswers = null;
+let roleCdTimer = null;
+
+// ── Host game state ───────────────────────────────────────────────────────────
+let G = null; // only populated on host
+
+// ── Utilities ────────────────────────────────────────────────────────────────
+const esc = s => String(s ?? '')
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  .replace(/"/g,'&quot;');
+
+const $ = id => document.getElementById(id);
+
+function initial(n) { return (n ?? '?')[0].toUpperCase(); }
+
+const AV_COLORS = [
+  'linear-gradient(135deg,#7c3aed,#a855f7)',
+  'linear-gradient(135deg,#2563eb,#60a5fa)',
+  'linear-gradient(135deg,#059669,#34d399)',
+  'linear-gradient(135deg,#dc2626,#f87171)',
+  'linear-gradient(135deg,#d97706,#fbbf24)',
+  'linear-gradient(135deg,#7c3aed,#22d3ee)',
+  'linear-gradient(135deg,#be185d,#f472b6)',
+  'linear-gradient(135deg,#0e7490,#22d3ee)',
+];
+function avColor(n) {
+  let h = 0;
+  for (const c of n) h = (h * 31 + c.charCodeAt(0)) % AV_COLORS.length;
+  return AV_COLORS[Math.abs(h) % AV_COLORS.length];
+}
+
+function pluralVotes(n) {
+  if (n === 1) return '1 голос';
+  if (n >= 2 && n <= 4) return `${n} голоса`;
+  return `${n} голосов`;
+}
+
+function genCode() {
+  const ch = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:4}, () => ch[Math.floor(Math.random() * ch.length)]).join('');
+}
+
+// ── Screen management ─────────────────────────────────────────────────────────
+function show(id) {
+  document.querySelectorAll('.screen,.flex-screen').forEach(s => s.classList.remove('active'));
+  const el = $(`s-${id}`);
+  if (el) el.classList.add('active');
+}
+
+// ── Loading overlay ───────────────────────────────────────────────────────────
+function showLoading(txt = 'Подключение…') { $('loading').classList.remove('hidden'); $('loading-txt').textContent = txt; }
+function hideLoading() { $('loading').classList.add('hidden'); }
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+let toastTimer = null;
+function toast(msg, ms = 3200) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.add('hidden'), ms);
+}
+
+// ── Error display ─────────────────────────────────────────────────────────────
+function showErr(msg) { $('err-box').textContent = msg; $('err-box').classList.remove('hidden'); }
+function clearErr()   { $('err-box').classList.add('hidden'); }
+
+// ── Timer display ─────────────────────────────────────────────────────────────
+const TIMER_MAX = { 'a-timer': TIMERS.ANSWERING, 'd-timer': TIMERS.DISCUSSING, 'v-timer': TIMERS.VOTING };
+const TIMER_ARC = { 'a-timer': 'a-arc', 'd-timer': 'd-arc', 'v-timer': 'v-arc' };
+const CIRCUMFERENCE = 188;
+
+function setTimer(id, v) {
+  const el = $(id); if (!el) return;
+  el.textContent = v;
+  el.className = 'timer';
+  const isWarn = v <= 10;
+  const isCrit = v <= 5;
+  if (isWarn) el.classList.add('warn');
+  if (isCrit) el.classList.add('crit');
+
+  // Update SVG arc
+  const arc = $(TIMER_ARC[id]);
+  if (arc) {
+    const max = TIMER_MAX[id] || 90;
+    const pct = Math.max(0, v / max);
+    const offset = CIRCUMFERENCE * (1 - pct);
+    arc.style.strokeDashoffset = offset;
+    arc.style.stroke = isCrit ? 'var(--bad)' : isWarn ? 'var(--warn)' : 'var(--cyan)';
+  }
+}
+
+// ── Role badge ────────────────────────────────────────────────────────────────
+function setRBadge(id) {
+  const el = $(id); if (!el || !myRole) return;
+  el.className = `rbadge ${myRole}`;
+  el.textContent = myRole === 'ai' ? '🤖 ИИ' : '👤 Человек';
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// HOST: GAME STATE MANAGEMENT
+// ══════════════════════════════════════════════════════════════════════════════
+
+function makeG(code, hostId, hostName) {
+  return {
+    code, host: hostId, state: 'lobby', round: 0, maxRounds: MAX_ROUNDS,
+    currentQuestion: null, answers: {}, votes: {}, chat: [], usedQuestions: [],
+    players: { [hostId]: { id:hostId, name:hostName, role:null, isAlive:true, hasAnswered:false, hasVoted:false } },
+    timerInterval: null, timeLeft: 0,
+  };
+}
+
+function aliveP() { return Object.values(G.players).filter(p => p.isAlive); }
+
+// Compute public state (no secret roles exposed)
+function pub() {
+  const isVoting = G.state === 'voting';
+  const showAns  = ['discussing','voting','round_results'].includes(G.state);
+  let voteCounts = null;
+  if (isVoting) {
+    voteCounts = {};
+    aliveP().forEach(p => { voteCounts[p.id] = 0; });
+    Object.values(G.votes).forEach(tid => { if (voteCounts[tid] !== undefined) voteCounts[tid]++; });
+  }
+  return {
+    code: G.code, state: G.state, round: G.round, maxRounds: G.maxRounds,
+    hostId: G.host, currentQuestion: G.currentQuestion,
+    answers: showAns ? G.answers : null, chat: G.chat, voteCounts, timeLeft: G.timeLeft,
+    players: Object.values(G.players).map(p => ({
+      id:p.id, name:p.name, isAlive:p.isAlive, hasAnswered:p.hasAnswered, hasVoted:p.hasVoted,
+    })),
+  };
+}
+
+// Host broadcasts to all peers + updates own UI
+function broadcast(type, data) {
+  const msg = { type, data };
+  Object.values(hostConns).forEach(c => { if (c.open) c.send(msg); });
+  onMsg(msg); // host processes for own UI
+}
+
+// Host sends to one player (or self)
+function sendTo(pid, type, data) {
+  const msg = { type, data };
+  if (pid === myPeerId) { onMsg(msg); return; }
+  if (hostConns[pid]?.open) hostConns[pid].send(msg);
+}
+
+function stopTimer() {
+  if (G?.timerInterval) { clearInterval(G.timerInterval); G.timerInterval = null; }
+}
+
+function startGTimer(secs, onEnd) {
+  stopTimer();
+  G.timeLeft = secs;
+  G.timerInterval = setInterval(() => {
+    G.timeLeft--;
+    broadcast('timer_update', { timeLeft: G.timeLeft });
+    if (G.timeLeft <= 0) { clearInterval(G.timerInterval); G.timerInterval = null; onEnd(); }
+  }, 1000);
+}
+
+// ── Phase transitions ──────────────────────────────────────────────────────────
+
+function hostStartAnswering() {
+  G.round++;
+  G.state = 'answering';
+  G.answers = {}; G.votes = {}; G.chat = [];
+  // Pick unused question
+  const avail = QUESTIONS.reduce((a,_,i) => { if (!G.usedQuestions.includes(i)) a.push(i); return a; }, []);
+  const pool = avail.length ? avail : QUESTIONS.map((_,i) => i);
+  const qi = pool[Math.floor(Math.random() * pool.length)];
+  G.usedQuestions.push(qi);
+  G.currentQuestion = QUESTIONS[qi];
+  aliveP().forEach(p => { p.hasAnswered = false; p.hasVoted = false; });
+  broadcast('game_state', pub());
+  startGTimer(TIMERS.ANSWERING, hostStartDiscussing);
+}
+
+function hostStartDiscussing() {
+  aliveP().filter(p => !p.hasAnswered).forEach(p => {
+    p.hasAnswered = true;
+    G.answers[p.id] = { playerId:p.id, playerName:p.name, text:'…' };
+  });
+  G.state = 'discussing';
+  broadcast('game_state', pub());
+  startGTimer(TIMERS.DISCUSSING, hostStartVoting);
+}
+
+function hostStartVoting() {
+  G.state = 'voting'; G.votes = {};
+  aliveP().forEach(p => { p.hasVoted = false; });
+  broadcast('game_state', pub());
+  startGTimer(TIMERS.VOTING, hostProcessVotes);
+}
+
+function hostProcessVotes() {
+  stopTimer();
+  const counts = {};
+  aliveP().forEach(p => { counts[p.id] = 0; });
+  Object.values(G.votes).forEach(tid => { if (counts[tid] !== undefined) counts[tid]++; });
+
+  let maxV = 0, cands = [];
+  Object.entries(counts).forEach(([id, n]) => {
+    if (n > maxV) { maxV = n; cands = [id]; }
+    else if (n === maxV && n > 0) cands.push(id);
+  });
+
+  let elimId = null;
+  if (maxV > 0) { elimId = cands[Math.floor(Math.random() * cands.length)]; G.players[elimId].isAlive = false; }
+
+  const eliminated = elimId ? { id:elimId, name:G.players[elimId].name, role:G.players[elimId].role } : null;
+
+  const alive = aliveP();
+  const nAI = alive.filter(p => p.role === 'ai').length;
+  const nH  = alive.filter(p => p.role === 'human').length;
+  let winner = null;
+  if (nAI === 0) winner = 'humans';
+  else if (nAI >= nH) winner = 'ai';
+  else if (G.round >= G.maxRounds) winner = 'ai';
+
+  G.state = 'round_results';
+  broadcast('round_results', { round:G.round, eliminated, voteCounts:counts, votes:G.votes, winner });
+
+  if (winner) {
+    G.state = 'game_over';
+    setTimeout(() => {
+      broadcast('game_over', {
+        winner,
+        players: Object.values(G.players).map(p => ({ id:p.id, name:p.name, role:p.role, isAlive:p.isAlive })),
+      });
+    }, 3500);
+  }
+}
+
+// ── Host: process events from players ────────────────────────────────────────
+
+function hostOnEvent(fromId, type, data) {
+  switch (type) {
+
+    case 'join_request': {
+      const name = data.name?.trim();
+      if (G.state !== 'lobby') { sendTo(fromId,'error',{message:'Игра уже началась'}); return; }
+      if (Object.keys(G.players).length >= 8) { sendTo(fromId,'error',{message:'Комната заполнена (макс. 8)'}); return; }
+      if (!name) { sendTo(fromId,'error',{message:'Пустое имя'}); return; }
+      if (Object.values(G.players).some(p => p.name.toLowerCase() === name.toLowerCase())) {
+        sendTo(fromId,'error',{message:'Это имя уже занято'}); return;
+      }
+      G.players[fromId] = { id:fromId, name, role:null, isAlive:true, hasAnswered:false, hasVoted:false };
+      sendTo(fromId,'room_joined',{code:G.code});
+      broadcast('player_joined',{name});
+      broadcast('game_state',pub());
+      break;
+    }
+
+    case 'start_game': {
+      if (fromId !== G.host || G.state !== 'lobby') return;
+      const ids = Object.keys(G.players);
+      if (ids.length < 1) { sendTo(fromId,'error',{message:'Нужно хотя бы 1 игрок'}); return; }
+      // Assign roles
+      ids.forEach(id => { G.players[id].role = 'human'; });
+      const nAI = ids.length <= 5 ? 1 : 2;
+      [...ids].sort(() => Math.random() - 0.5).slice(0, nAI).forEach(id => { G.players[id].role = 'ai'; });
+      // Send each player their secret role
+      Object.values(G.players).forEach(p => sendTo(p.id,'your_role',{role:p.role}));
+      setTimeout(hostStartAnswering, ROLE_REVEAL_SECS * 1000);
+      break;
+    }
+
+    case 'submit_answer': {
+      const p = G.players[fromId];
+      if (!p?.isAlive || p.hasAnswered || G.state !== 'answering' || !data.answer?.trim()) return;
+      p.hasAnswered = true;
+      G.answers[fromId] = { playerId:fromId, playerName:p.name, text:data.answer.trim().slice(0,500) };
+      broadcast('player_answered',{playerId:fromId, playerName:p.name});
+      broadcast('game_state',pub());
+      if (aliveP().every(p => p.hasAnswered)) { stopTimer(); setTimeout(hostStartDiscussing, 1500); }
+      break;
+    }
+
+    case 'send_message': {
+      const p = G.players[fromId];
+      if (!p?.isAlive || G.state !== 'discussing' || !data.text?.trim()) return;
+      const msg = { playerId:fromId, playerName:p.name, text:data.text.trim().slice(0,300), timestamp:Date.now() };
+      G.chat.push(msg);
+      broadcast('new_message',msg);
+      break;
+    }
+
+    case 'submit_vote': {
+      const p = G.players[fromId];
+      if (!p?.isAlive || p.hasVoted || G.state !== 'voting') return;
+      const t = G.players[data.targetId];
+      if (!t?.isAlive || data.targetId === fromId) return;
+      p.hasVoted = true;
+      G.votes[fromId] = data.targetId;
+      broadcast('player_voted',{playerId:fromId, playerName:p.name});
+      broadcast('game_state',pub());
+      if (aliveP().every(p => p.hasVoted)) { stopTimer(); setTimeout(hostProcessVotes, 800); }
+      break;
+    }
+
+    case 'next_round':
+      if (fromId === G.host && G.state === 'round_results') hostStartAnswering();
+      break;
+
+    case 'restart_game':
+      if (fromId !== G.host || G.state !== 'game_over') return;
+      Object.values(G.players).forEach(p => { p.isAlive=true; p.role=null; p.hasAnswered=false; p.hasVoted=false; });
+      G.state='lobby'; G.round=0; G.answers={}; G.votes={}; G.chat={}; G.usedQuestions=[]; stopTimer();
+      broadcast('game_state',pub());
+      break;
+  }
+}
+
+// ── Handle player disconnect (host side) ──────────────────────────────────────
+function hostOnDisconnect(peerId) {
+  const p = G?.players[peerId];
+  if (!p) return;
+  broadcast('player_left',{name:p.name});
+  delete G.players[peerId];
+  delete hostConns[peerId];
+
+  if (G.state !== 'lobby' && G.state !== 'game_over' && aliveP().length < 2) {
+    stopTimer();
+    G.state = 'game_over';
+    broadcast('game_over',{
+      winner:'humans',
+      players: Object.values(G.players).map(p => ({id:p.id,name:p.name,role:p.role,isAlive:p.isAlive})),
+    });
+    return;
+  }
+  broadcast('game_state',pub());
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// NETWORKING: CREATE / JOIN
+// ══════════════════════════════════════════════════════════════════════════════
+
+function createRoom(name) {
+  myName = name; amHost = true;
+  showLoading('Создаём комнату…');
+
+  const tryCode = () => {
+    const code = genCode();
+    const pid  = 'aius-' + code;
+    hostPeer = new Peer(pid, { debug: 0 });
+
+    hostPeer.on('open', id => {
+      myPeerId = id; roomCode = code;
+      G = makeG(code, id, name);
+      hideLoading();
+
+      // Accept incoming connections from other players
+      hostPeer.on('connection', conn => {
+        conn.on('open', () => { hostConns[conn.peer] = conn; });
+        conn.on('data', msg => hostOnEvent(conn.peer, msg.type, msg.data));
+        conn.on('close', () => hostOnDisconnect(conn.peer));
+        conn.on('error', () => hostOnDisconnect(conn.peer));
+      });
+
+      onMsg({ type:'game_state', data:pub() });
+    });
+
+    hostPeer.on('error', err => {
+      if (err.type === 'unavailable-id') { hostPeer.destroy(); tryCode(); }
+      else { hideLoading(); showErr('Ошибка сети: ' + err.message); amHost = false; }
+    });
+  };
+
+  tryCode();
+}
+
+function joinRoom(name, code) {
+  myName = name; amHost = false;
+  showLoading('Подключаемся к комнате…');
+
+  clientPeer = new Peer({ debug: 0 });
+
+  clientPeer.on('open', id => {
+    myPeerId = id;
+    const targetId = 'aius-' + code.toUpperCase();
+    hostConn = clientPeer.connect(targetId, { reliable: true });
+
+    hostConn.on('open', () => {
+      hideLoading();
+      hostConn.send({ type:'join_request', data:{ name } });
+    });
+
+    hostConn.on('data', msg => onMsg(msg));
+    hostConn.on('close', () => toast('⚠ Соединение потеряно', 8000));
+    hostConn.on('error', () => { hideLoading(); showErr('Не удалось подключиться'); });
+  });
+
+  clientPeer.on('error', err => {
+    hideLoading();
+    if (err.type === 'peer-unavailable') showErr('Комната не найдена. Проверь код.');
+    else showErr('Ошибка: ' + err.message);
+  });
+}
+
+// ── Send event to host (works for both host and clients) ──────────────────────
+function send(type, data = {}) {
+  if (amHost) hostOnEvent(myPeerId, type, data);
+  else if (hostConn?.open) hostConn.send({ type, data });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// UI: INCOMING MESSAGE HANDLER
+// ══════════════════════════════════════════════════════════════════════════════
+
+function onMsg({ type, data }) {
+  switch (type) {
+    case 'game_state':
+      uiState = data;
+      roomCode = data.code;
+      handleState(data);
+      break;
+    case 'your_role':
+      myRole = data.role;
+      showRoleReveal(data.role);
+      break;
+    case 'room_joined':
+      roomCode = data.code;
+      toast('Вы вошли в комнату ' + data.code);
+      break;
+    case 'player_joined':  toast(data.name + ' вошёл в игру'); break;
+    case 'player_left':    toast(data.name + ' вышел из игры'); break;
+    case 'host_changed':
+      if (data.newHostId === myPeerId) { amHost = true; toast('Вы стали хостом'); }
+      break;
+    case 'timer_update':   updateTimers(data.timeLeft); break;
+    case 'player_answered': onPlayerAnswered(data); break;
+    case 'new_message':     onNewMessage(data); break;
+    case 'player_voted':    onPlayerVoted(data); break;
+    case 'round_results':   renderRoundResults(data); break;
+    case 'game_over':       renderGameOver(data); break;
+    case 'error': showErr(data.message); toast('⚠ ' + data.message); break;
+  }
+}
+
+// ── Master state router ───────────────────────────────────────────────────────
+function handleState(s) {
+  const isMyHost = s.hostId === myPeerId;
+  // isHost for UI purposes
+  const h = isMyHost;
+
+  switch (s.state) {
+    case 'lobby':       renderLobby(s, h); break;
+    case 'answering':   shuffledAnswers = null; renderAnswering(s); break;
+    case 'discussing':  renderDiscussing(s); break;
+    case 'voting':      renderVoting(s); break;
+  }
+}
+
+// ── Timer update: only update the visible screen's timer ──────────────────────
+function updateTimers(v) {
+  const map = { 'answering':'a-timer', 'discussing':'d-timer', 'voting':'v-timer' };
+  const id = uiState ? map[uiState.state] : null;
+  if (id) setTimer(id, v);
+}
+
+// ── Lobby ─────────────────────────────────────────────────────────────────────
+function renderLobby(s, h) {
+  show('lobby');
+  $('lob-code').textContent = s.code;
+  const grid = $('lob-players');
+  grid.innerHTML = '';
+  s.players.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'pc' + (p.id === s.hostId ? ' is-host' : '');
+    el.innerHTML = `<div class="av" style="background:${avColor(p.name)}">${esc(initial(p.name))}</div>
+      <div class="pname">${esc(p.name)}</div>${p.id===s.hostId?'<div class="ptag">Хост</div>':''}`;
+    grid.appendChild(el);
+  });
+  const isH = s.hostId === myPeerId;
+  $('lob-host-ctrl').classList.toggle('hidden', !isH);
+  $('lob-wait').classList.toggle('hidden', isH);
+  if (isH) {
+    const ok = s.players.length >= 1;
+    $('btn-start').disabled = !ok;
+    $('lob-hint').textContent = `Игроков: ${s.players.length} — можно начинать!`;
+  }
+}
+
+// ── Role reveal ───────────────────────────────────────────────────────────────
+function showRoleReveal(role) {
+  show('role');
+  const card = $('role-card');
+  card.className = 'role-card ' + (role==='ai'?'is-ai':'is-human');
+  $('role-orb').className = 'role-orb ' + (role==='ai'?'is-ai':'is-human');
+  $('role-emoji').textContent = role==='ai'?'🤖':'👤';
+  const t = $('role-title');
+  t.className = 'rtitle ' + (role==='ai'?'is-ai':'is-human');
+  t.textContent = role==='ai' ? 'Искусственный Интеллект' : 'Человек';
+  $('role-desc').textContent = role==='ai'
+    ? 'Ты — ИИ. Отвечай правдоподобно, смешивайся с людьми. Переживи все раунды — и ИИ победят.'
+    : 'Ты — Человек. Анализируй ответы, ищи нечеловеческие паттерны. Найди всех ИИ — и люди победят.';
+  let sec = ROLE_REVEAL_SECS;
+  clearInterval(roleCdTimer);
+  $('role-cd').textContent = sec;
+  roleCdTimer = setInterval(() => { sec--; $('role-cd').textContent = Math.max(0,sec); if(sec<=0) clearInterval(roleCdTimer); }, 1000);
+}
+
+// ── Answering ─────────────────────────────────────────────────────────────────
+function renderAnswering(s) {
+  show('answering');
+  $('a-rnd').textContent = s.round;
+  $('a-max').textContent = s.maxRounds;
+  $('a-q').textContent   = s.currentQuestion;
+  setRBadge('a-badge');
+  if (s.timeLeft !== undefined) setTimer('a-timer', s.timeLeft);
+
+  const me = s.players.find(p => p.id === myPeerId);
+  hasAnswered = me?.hasAnswered ?? false;
+  $('a-inp').disabled = hasAnswered;
+  $('btn-ans').disabled = hasAnswered;
+  $('a-sent').classList.toggle('hidden', !hasAnswered);
+  $('a-form').classList.toggle('hidden', hasAnswered);
+  renderAnsweredChips(s.players);
+}
+
+function renderAnsweredChips(players) {
+  $('a-who').innerHTML = players.filter(p=>p.isAlive).map(p =>
+    `<span class="chip ${p.hasAnswered?'chip-ok':'chip-dim'}">${esc(p.name)}</span>`
+  ).join('');
+}
+
+function onPlayerAnswered({ playerId, playerName }) {
+  if (uiState?.state === 'answering') {
+    const p = uiState.players.find(x => x.id === playerId);
+    if (p) p.hasAnswered = true;
+    renderAnsweredChips(uiState.players);
+    if (playerId !== myPeerId) toast(playerName + ' ответил');
+  }
+}
+
+// ── Discussing ────────────────────────────────────────────────────────────────
+function renderDiscussing(s) {
+  show('discussing');
+  $('d-rnd').textContent = s.round;
+  setRBadge('d-badge');
+  if (s.timeLeft !== undefined) setTimer('d-timer', s.timeLeft);
+
+  if (!shuffledAnswers && s.answers) {
+    shuffledAnswers = Object.values(s.answers).sort(() => Math.random() - 0.5);
+  }
+  const box = $('d-answers');
+  box.innerHTML = '';
+  (shuffledAnswers || []).forEach(a => {
+    const el = document.createElement('div');
+    el.className = 'ai';
+    el.innerHTML = `<div class="ain">${esc(a.playerName)}</div><div class="ait">${esc(a.text)}</div>`;
+    box.appendChild(el);
+  });
+
+  if (s.chat?.length) renderChatHistory(s.chat);
+}
+
+function renderChatHistory(msgs) {
+  const log = $('chat-log');
+  log.innerHTML = '';
+  msgs.forEach(m => appendChat(m, false));
+  log.scrollTop = log.scrollHeight;
+}
+
+function appendChat(msg, scroll = true) {
+  const log = $('chat-log');
+  const own = msg.playerId === myPeerId;
+  const el = document.createElement('div');
+  el.className = 'msg' + (own?' own':'');
+  el.innerHTML = `<div class="mmeta">${esc(msg.playerName)}</div><div class="mbody">${esc(msg.text)}</div>`;
+  log.appendChild(el);
+  if (scroll) log.scrollTop = log.scrollHeight;
+}
+
+function onNewMessage(msg) {
+  if ($('s-discussing')?.classList.contains('active')) appendChat(msg);
+  if (uiState) uiState.chat = [...(uiState.chat||[]), msg];
+}
+
+// ── Voting ────────────────────────────────────────────────────────────────────
+function renderVoting(s) {
+  show('voting');
+  $('v-rnd').textContent = s.round;
+  $('v-q').textContent   = s.currentQuestion;
+  setRBadge('v-badge');
+  if (s.timeLeft !== undefined) setTimer('v-timer', s.timeLeft);
+  const me = s.players.find(p => p.id === myPeerId);
+  hasVoted = me?.hasVoted ?? false;
+  $('v-sent').classList.toggle('hidden', !hasVoted);
+  renderVoteGrid(s);
+}
+
+function renderVoteGrid(s) {
+  const grid = $('v-players');
+  grid.innerHTML = '';
+  const candidates = s.players.filter(p => p.isAlive && p.id !== myPeerId);
+  const total = s.players.filter(p => p.isAlive).length;
+
+  candidates.forEach(p => {
+    const votes = s.voteCounts?.[p.id] ?? 0;
+    const pct   = total > 0 ? Math.round((votes / total) * 100) : 0;
+    const card  = document.createElement('div');
+    card.className = 'vc' + (hasVoted?' dis':'');
+    card.innerHTML = `
+      <div class="av" style="background:${avColor(p.name)};width:38px;height:38px;margin:0 auto 5px;font-size:.95rem">${esc(initial(p.name))}</div>
+      <div class="vname">${esc(p.name)}</div>
+      <div class="vbar"><div class="vfill" style="width:${pct}%"></div></div>
+      <div class="vcnt">${votes>0?pluralVotes(votes):'—'}</div>`;
+    if (!hasVoted) card.addEventListener('click', () => send('submit_vote', { targetId: p.id }));
+    grid.appendChild(card);
+  });
+}
+
+function onPlayerVoted({ playerName }) {
+  if (uiState?.state === 'voting') {
+    const voted = uiState.players.filter(p=>p.isAlive && p.hasVoted).length + 1;
+    const total = uiState.players.filter(p=>p.isAlive).length;
+    toast(`${playerName} проголосовал (${voted}/${total})`);
+  }
+}
+
+// ── Round results ─────────────────────────────────────────────────────────────
+function renderRoundResults(result) {
+  show('round-results');
+  $('r-heading').textContent = `Раунд ${result.round} — результаты`;
+
+  if (result.eliminated) {
+    $('r-name').textContent = result.eliminated.name;
+    $('r-role').textContent = result.eliminated.role === 'ai' ? '🤖 Это был ИИ!' : '👤 Это был Человек!';
+    $('r-role').className   = 'elimtag ' + result.eliminated.role;
+    $('r-elimcard').style.borderColor = result.eliminated.role === 'ai' ? 'var(--neon)' : 'var(--cyan)';
+  } else {
+    $('r-name').textContent = 'Никто не исключён';
+    $('r-role').textContent = 'Голоса разделились — ничья';
+    $('r-role').className   = 'elimtag none';
+  }
+
+  const bk = $('r-breakdown');
+  bk.innerHTML = '';
+  if (result.voteCounts && uiState) {
+    const sorted = Object.entries(result.voteCounts).sort((a,b) => b[1]-a[1]);
+    const top = sorted[0]?.[1] ?? 0;
+    sorted.forEach(([pid, n]) => {
+      const p = uiState.players.find(x => x.id === pid); if (!p) return;
+      const el = document.createElement('div');
+      el.className = 'bkitem' + (n===top && top>0?' top':'');
+      el.innerHTML = `<span class="bkname">${esc(p.name)}</span><span class="bkcnt">${pluralVotes(n)}</span>`;
+      bk.appendChild(el);
+    });
+  }
+
+  const isH = uiState?.hostId === myPeerId;
+  $('r-host-ctrl').classList.toggle('hidden', !isH || !!result.winner);
+  $('r-wait').classList.toggle('hidden', isH || !!result.winner);
+}
+
+// ── Game Over ─────────────────────────────────────────────────────────────────
+function renderGameOver({ winner, players }) {
+  show('game-over');
+  const ann = $('go-ann');
+  if (winner === 'humans') {
+    ann.className = 'goa wh';
+    $('go-icon').textContent  = '🧑‍🤝‍🧑';
+    $('go-title').textContent = 'Люди победили!';
+    $('go-sub').textContent   = 'Все ИИ раскрыты и исключены из игры';
+  } else {
+    ann.className = 'goa wa';
+    $('go-icon').textContent  = '🤖';
+    $('go-title').textContent = 'ИИ победили!';
+    $('go-sub').textContent   = 'Искусственный интеллект остался в тени до конца';
+  }
+  const list = $('go-players');
+  list.innerHTML = '';
+  players.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'fc';
+    el.innerHTML = `<div class="fcn">${esc(p.name)}</div>
+      <div class="fcr ${p.role}">${p.role==='ai'?'🤖 ИИ':'👤 Человек'}</div>
+      ${!p.isAlive?'<div class="fcd">исключён</div>':''}`;
+    list.appendChild(el);
+  });
+  $('go-host-ctrl').classList.toggle('hidden', uiState?.hostId !== myPeerId);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// UI EVENT LISTENERS
+// ══════════════════════════════════════════════════════════════════════════════
+
+document.addEventListener('DOMContentLoaded', () => {
+
+  // Welcome
+  $('btn-create').addEventListener('click', () => {
+    const name = $('inp-name').value.trim();
+    if (!name) { showErr('Введи своё имя'); return; }
+    clearErr(); createRoom(name);
+  });
+
+  $('btn-join').addEventListener('click', () => {
+    const name = $('inp-name').value.trim();
+    const code = $('inp-code').value.trim().toUpperCase();
+    if (!name) { showErr('Введи своё имя'); return; }
+    if (code.length !== 4) { showErr('Код комнаты — 4 символа'); return; }
+    clearErr(); joinRoom(name, code);
+  });
+
+  $('inp-code').addEventListener('input', function(){ this.value = this.value.toUpperCase(); });
+  $('inp-name').addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    if ($('inp-code').value.trim().length > 0) $('btn-join').click();
+    else $('btn-create').click();
+  });
+  $('inp-code').addEventListener('keydown', e => { if (e.key==='Enter') $('btn-join').click(); });
+
+  // Lobby
+  $('btn-copy').addEventListener('click', () => {
+    if (roomCode) navigator.clipboard.writeText(roomCode).then(() => toast('Код скопирован!'));
+  });
+  $('btn-start').addEventListener('click', () => send('start_game'));
+
+  // Answering
+  $('a-inp').addEventListener('input', function(){ $('a-chars').textContent = this.value.length; });
+  $('btn-ans').addEventListener('click', submitAnswer);
+  $('a-inp').addEventListener('keydown', e => { if (e.key==='Enter' && e.ctrlKey) submitAnswer(); });
+
+  function submitAnswer() {
+    if (hasAnswered) return;
+    const text = $('a-inp').value.trim();
+    if (!text) { toast('Напиши ответ перед отправкой'); return; }
+    send('submit_answer', { answer: text });
+    hasAnswered = true;
+    $('a-inp').disabled = true;
+    $('btn-ans').disabled = true;
+    $('a-sent').classList.remove('hidden');
+    $('a-form').classList.add('hidden');
+  }
+
+  // Chat
+  $('btn-chat').addEventListener('click', sendChat);
+  $('chat-inp').addEventListener('keydown', e => { if (e.key==='Enter') sendChat(); });
+
+  function sendChat() {
+    const text = $('chat-inp').value.trim();
+    if (!text) return;
+    send('send_message', { text });
+    $('chat-inp').value = '';
+  }
+
+  // Round results
+  $('btn-next').addEventListener('click', () => send('next_round'));
+
+  // Game over
+  $('btn-restart').addEventListener('click', () => send('restart_game'));
+});
+
+// ── Canvas background particles ───────────────────────────────────────────────
+(function() {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+
+  let W, H, particles;
+
+  const COLORS = ['rgba(124,58,237,', 'rgba(168,85,247,', 'rgba(34,211,238,', 'rgba(99,102,241,'];
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function mkParticle() {
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 1.8 + 0.4,
+      vx: (Math.random() - 0.5) * 0.35,
+      vy: (Math.random() - 0.5) * 0.35,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      alpha: Math.random() * 0.5 + 0.15,
+      pulse: Math.random() * Math.PI * 2,
+    };
+  }
+
+  function init() {
+    resize();
+    particles = Array.from({ length: 90 }, mkParticle);
+  }
+
+  function drawHex(x, y, size, alpha, color) {
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = (Math.PI / 3) * i - Math.PI / 6;
+      i === 0 ? ctx.moveTo(x + size * Math.cos(a), y + size * Math.sin(a))
+               : ctx.lineTo(x + size * Math.cos(a), y + size * Math.sin(a));
+    }
+    ctx.closePath();
+    ctx.strokeStyle = color + alpha + ')';
+    ctx.lineWidth = 0.6;
+    ctx.stroke();
+  }
+
+  let frame = 0;
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    frame++;
+
+    // Draw connection lines between nearby particles
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 120) {
+          const a = (1 - dist / 120) * 0.12;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(124,58,237,${a})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Draw particles and occasional hexagons
+    particles.forEach((p, i) => {
+      p.pulse += 0.02;
+      const a = p.alpha * (0.7 + 0.3 * Math.sin(p.pulse));
+
+      if (i % 7 === 0) {
+        drawHex(p.x, p.y, p.r * 5, a * 0.6, p.color);
+      } else {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = p.color + a + ')';
+        ctx.fill();
+      }
+
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < -10) p.x = W + 10;
+      if (p.x > W + 10) p.x = -10;
+      if (p.y < -10) p.y = H + 10;
+      if (p.y > H + 10) p.y = -10;
+    });
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); });
+  init();
+  draw();
+})();
+</script>
+</body>
+</html>
